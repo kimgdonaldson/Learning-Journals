@@ -1,0 +1,348 @@
+---
+title: "Data Cleaning"
+author: "Kim Donaldson"
+date: "2/17/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+library(tidyverse)
+```
+
+## Part I
+
+Data cleaning includes the following:
+
+* Removing data we don't need for analysis
+* Removing duplicate data
+* Dealing with inconsistencies
+* Dealing with missing data and outliers
+* Creating new variables where necessary
+* Combining seperate datasets
+
+Questions to ask when cleaning data:
+
+1. Which variables are needed for analysis?
+2. Do we need to create any new variables from existing ones?
+3. Are the columns the correct type?
+4. Do we need to combine datasets?
+5. Are there missing data? i.e NA, NULL, empty strings
+
+
+```{r}
+directory <- '/Users/kimdonaldson/Desktop/dataquest.io/data'
+files <- c("sat_results", "ap_2010", "class_size", "demographics", "graduation_outcomes", "hs_directory")
+filenames <- c()
+for(file in files){
+  file <- paste(directory, file, sep = "/")
+  file <- paste(file, ".csv", sep = "")
+  filenames <- c(filenames, file)
+}
+sat_results <- read_csv(filenames[1])
+ap_2010 <- read_csv(filenames[2])
+class_size <- read_csv(filenames[3])
+demographics <- read_csv(filenames[4])
+graduation <- read_csv(filenames[5])
+hs_directory <-read_csv(filenames[6])
+```
+
+Useful functions for examining data include:
+
+* `head()`
+* `tail()`
+* `str()`
+* `colnames()`
+* `glimpse()`
+* `unique()`
+* `map()`
+
+```{r}
+head(sat_results)
+```
+
+```{r}
+colnames(sat_results)
+```
+
+We can get all the column data types by mapping the `class()` function to a data frame.
+
+```{r}
+map(sat_results, class)
+```
+
+Clean column names by following these steps:
+
+1. Convert to lowercase
+2. Remove punctuation
+3. Convert spaces to underscores
+
+```{r}
+clean_col_names <- function(df){
+colnames(df) %>% str_to_lower() %>%
+  str_remove('[.]') %>%
+  str_replace_all(" ", "_") %>% return()
+}
+colnames(sat_results) <- clean_col_names(sat_results)
+colnames(ap_2010) <- clean_col_names(ap_2010)
+colnames(class_size) <- clean_col_names(class_size)
+colnames(demographics) <- clean_col_names(demographics)
+colnames(graduation) <- clean_col_names(graduation)
+colnames(hs_directory) <- clean_col_names(hs_directory)
+colnames(sat_results)
+```
+
+We need to change the data types sat scores to numeric, and create a new variable that combines the scores
+
+```{r}
+sat_results <- sat_results %>%
+  mutate(sat_critical_reading_avg_score = as.numeric(sat_critical_reading_avg_score),
+         sat_math_avg_score = as.numeric(sat_math_avg_score),
+         sat_writing_avg_score = as.numeric(sat_writing_avg_score),
+         avg_sat_score = sat_critical_reading_avg_score + sat_math_avg_score + sat_writing_avg_score)
+```
+
+The `across()` function makes it easy to apply the same transformation. So we could have done the same type conversion as:
+```{r}
+sat_results <- sat_results %>%
+  mutate( across( c('sat_critical_reading_avg_score','sat_math_avg_score','sat_writing_avg_score'), as.numeric ))
+```
+
+Fortunately we don't have to spell out the column names like this. `across()` also has helper functions `starts_with()`, `ends_with()`, and `contains()`
+So we could have just as easily written this out as:
+```{r}
+sat_results <- sat_results %>%
+  mutate( across(contains('avg_score'), as.numeric) )
+```
+
+```{r}
+colnames(ap_2010)
+```
+
+```{r}
+map(ap_2010, class)
+```
+
+```{r}
+ap_2010 <- ap_2010 %>%
+  mutate(
+    exams_per_student = total_exams_taken / ap_test_takers,
+    high_score_percent = (number_of_exams_with_scores_3_4_or_5 / total_exams_taken) * 100
+  )
+```
+
+Now lets look at class_size dataframe
+```{r}
+colnames(class_size)
+```
+
+```{r}
+print(unique(class_size$grade))
+print(unique(class_size$program_type))
+```
+Instructions:
+
+1. Filter class_size where grade values are equal to '09-12' and program type values are 'GEN ED'
+
+```{r}
+class_size <- class_size %>%
+  filter(grade == '09-12' & program_type == 'GEN ED')
+```
+
+Create a new class_size DataFrame that contains the following:
+
+The following variables from the original DataFrame:
+
+CSD
+SCHOOL CODE
+SCHOOL NAME
+The following new variables:
+
+avg_class_size (average of AVERAGE CLASS SIZE for each school)
+avg_largest_class (average of SIZE OF LARGEST CLASS for each school)
+avg_smallest_class (average of SIZE OF SMALLEST CLASS for each school)
+
+```{r}
+class_size <- class_size %>%
+  group_by(csd, school_code, school_name) %>%
+  summarise(avg_class_size = mean(average_class_size),
+            avg_largest_class_size = mean(size_of_largest_class),
+            avg_smallest_class_size = mean(size_of_smallest_class))
+```
+
+The graduation data frame:
+Create a new graduation DataFrame.
+
+Filter the rows that contain only the following:
+
+Data for the total cohort of students (the Demographic variable is equal "Total Cohort") and
+Data from the 2006 Cohort (the Cohort variable is equal "2006").
+Select the following columns : DBN, School Name, Total Grads - % of cohort, Dropped Out - % of cohort.
+
+```{r}
+graduation <- graduation %>%
+  filter(demographic == 'Total Cohort' & cohort == '2006') %>%
+  select(dbn, school_name, `total_grads_-_%_of_cohort`, `dropped_out_-_%_of_cohort`)
+```
+
+Create a new demographics DataFrame.
+
+Filter the rows that contain only the following:
+
+Data for which values of schoolyear are "20112012" and
+Data for which values of grade9 are not "NA" (i.e., ! is.na(grade9)).
+Select Columns containing the following variables using the fact that some of them contain "_per" in their name:
+
+DBN
+Name
+frl_percent
+total_enrollment
+ell_percent
+sped_percent
+asian_per
+black_per
+hispanic_per
+white_per
+male_per
+female_per
+
+```{r}
+demographics <- demographics %>%
+  filter(schoolyear == '20112012' & !is.na(grade9)) %>%
+  select(dbn, name, total_enrollment, contains('_per'))
+```
+
+Create a new demographics_clean DataFrame by removing the Name and the female_per columns from the demographics DataFrame available from the previous screen.
+
+Use the negative column technique to remove the Name and the female_per columns.
+Save the new DataFrame as demographics_clean.
+
+```{r}
+demographics_clean <- demographics %>%
+  select(-name, -female_per)
+```
+
+Create a new hs_directory DataFrame that contains columns for the variables dbn, school_name, and Location 1.
+
+```{r}
+hs_directory <- hs_directory %>%
+  select(dbn, school_name, location_1)
+```
+
+## Part 2 String manipulation
+
+Tidy Data:
+
+* Each variable must have it's own column name
+* Each observation mush have it's own row
+* Each value must have it's own cell
+
+The `parse_number()` function takes a vector as input and drops and characters before and after the numeric part of a string. This can be used in combination with `mutate()` and `across()` 
+
+df %>% 
+  mutate( across(first_col:last_col), parse_number )
+
+Let's look at the `hs_directory` dataset. The location_1 column contains two '\n' This information can be separated into it's own columns with the `separate()` function with the syntax:
+
+df %>% separate(col = name_of_col_to_separate, 
+                into = c("col1", "col2", "col3"),
+                sep = '\n')
+                
+Instructions:
+Create a new hs_directory dataframe containing a new variable column, lat_long, containing the coordinates (surrounded by parentheses) extracted from the Location 1 column.
+
+Use the separate() function to split the column Location 1 into three new columns: "string_1", "string_2", and "string_3" with "\n" as separator.
+Use the select() function to remove the columns string_1 and string_2 because we don't need them.
+Use the rename() function to rename the string_3 column into lat_long.
+
+```{r}
+hs_directory <- hs_directory %>%
+  separate(col = location_1,
+           into = c("string_1", "string_2", "string_3"),
+           sep = '\n')
+```
+```{r}
+hs_directory <- hs_directory %>% select(-string_1, -string_2)
+```
+```{r}
+hs_directory <- rename(hs_directory, lat_long = string_3)
+```
+
+Instructions:
+
+Create a new hs_directory dataframe containing new columns, lat and long, containing the coordinates extracted from the lat_long column.
+
+Use the separate() function to split the column lat_long into two new columns: "lat" and "long" with "," as the separator.
+
+```{r}
+hs_directory <- hs_directory %>%
+  separate(col = lat_long,
+           into = c("lat", "long"),
+           sep=',')
+```
+
+Instruction:
+Use str_sub() and mutate() to create a new hs_directory dataframe with lat and long variables containing only numeric characters.
+
+Convert the data type of the lat and long variables from character to numeric.
+
+For this exercise, we can also use parse_number() to achieve the same result. Don't hesitate to try it!
+
+```{r}
+hs_directory <- hs_directory %>%
+  mutate(lat = parse_number(lat),
+         long = parse_number(long))
+```
+
+`str_c()` concatenates strings
+`str_pad()`, adds padding
+
+Create a new DBN variable in the class_size dataframe.
+
+Combine the columns CSD and SCHOOL CODE and assign the result to a new column DBN.
+Update the DBN column making sure that its values have six characters.
+
+```{r}
+class_size <- class_size %>%
+  mutate(dbn = str_c(csd, school_code, sep = "")) %>%
+  mutate(dbn = str_pad(dbn, width = 6, side = 'left', pad = '0'))
+```
+
+## Part 3 - Relational Data
+
+The `duplicated()` function takes a vector as input and returns a logical vector that indicates wether the value is a duplicate of the one that comes before it. This can be combined with `sum()` to get a count of duplicated rows. In order to remove duplicated rows we can use the `dplyr` function `distint()` with the syntax:
+df %>% distinct(col_name, .keep_all = TRUE)
+
+There are two main types of mutating joins
+
+* inner joins
+  Matches pairs of variables in two dataframes whenever their values of keys are the same. Does not include any rows with unmatched keys
+* outer joins
+  Keep rows that appear in atleast one of the two dataframes we're combining. Can be divided into left, right, and full joins
+
+Instructions:
+Use the `inner_join()` function to combine the sat_results and class_size dataframes.
+
+Save the new dataframe as sat_class_size.
+
+Create a scatter plot with avg_class_size on the x-axis and avg_sat_score on the y-axis to see if SAT scores seem to be related to class size.
+
+```{r}
+sat_class_size <- sat_results %>%
+  inner_join(class_size, by = 'dbn')
+
+ggplot(data = sat_class_size, aes(x = avg_class_size, y = avg_sat_score)) + 
+  geom_point()
+```
+
+
+```{r}
+combined <- sat_results %>%
+  full_join(ap_2010, by = "dbn") %>%
+  left_join(class_size, by = "dbn") %>%
+  left_join(demographics, by = "dbn") %>%
+  left_join(graduation, by = "dbn") %>%
+  left_join(hs_directory, by = "dbn")
+```
+

@@ -1,0 +1,135 @@
+---
+title: "Learning Plotly"
+author: "Kim Donaldson"
+date: "1/1/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+## Introduction to graphing with Plotly
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(palmerpenguins)
+vaers_file <- '/Users/kimdonaldson/Desktop/2021VAERSData/2021VAERSDATA.csv'
+vaers_data <- read.csv(vaers_file)
+vaers_deaths <- vaers_data %>%
+  filter( DIED == 'Y' )
+vaers_deaths_25_50 <- vaers_deaths %>%
+  filter( AGE_YRS < 50 & AGE_YRS > 25)
+```
+## Basic Scatter Plot
+Comparing Body Mass vs. Flipper length in Penguins
+
+```{r}
+fig <- penguins %>%
+  plot_ly( x = ~body_mass_g, y = ~flipper_length_mm, type="scatter", color = ~species) %>%
+  layout(
+    title = "Body Mass vs. Flipper Length",
+    xaxis = list(title="Body Mass"),
+    yaxis = list(title="Flipper Length")
+  )
+fig
+```
+## Basic Histogram in ggplot
+```{r}
+ggplot(data=penguins, aes(x = body_mass_g)) + geom_histogram(
+  
+)
+```
+
+
+Basic Histogram in Plotly
+```{r}
+fig <- penguins %>%
+  plot_ly( x = ~body_mass_g, type="histogram", color = ~body_mass_g, colors=c(rgb(.8,0,0)), opacity=.5) %>% 
+  layout(
+    title = "Body Mass"
+  )
+fig
+```
+
+```{r}
+fig <- vaers_deaths %>% 
+  plot_ly(x = ~CAGE_YR, type="histogram", color = ~AGE_YRS, colors="dark blue", legend = "none", name="Vaers Deaths") %>%
+  layout(
+    title = "VAERS Deaths in Years",
+    xaxis = list(title = "Age"),
+    yaxis = list(title = "Count"),
+    plot_bgcolor="#c7daec",
+    showlegend = FALSE
+  )
+fig
+```
+
+```{r}
+x <- seq_len(nrow(volcano)) + 100
+y <- seq_len(ncol(volcano)) + 500
+plot_ly() %>% add_surface( x = ~x, y = ~y, z=~volcano)
+```
+## Bar Charts
+```{r}
+fig <- plot_ly(diamonds, x = ~cut, color=~clarity, colors = "Greens", stroke = I("black"))
+fig
+```
+
+Overlaying Histograms
+```{r}
+a <- penguins %>% filter(species=="Gentoo") %>% select(body_mass_g)
+b <- penguins %>% filter(species=="Adelie") %>% select(body_mass_g)
+c <- penguins %>% filter(species=="Chinstrap") %>% select(body_mass_g)
+fig <- plot_ly(opacity=.6, stroke = I("black")) %>%
+  add_histogram(data = a, x=~body_mass_g, name="Gentoo") %>%
+  add_histogram(data = b, x=~body_mass_g, name="Adelie") %>%
+  add_histogram(data = c, x=~body_mass_g, name="Chinstrap")
+fig <- fig %>% layout(barmode="overlay", title="Penguin Body Mass by Species",
+                      xaxis=list(title="Body Mass"),
+                      yaxis=list(title="Frequency"),
+                      plot_bgcolor = "#c7daec",
+                      showlegend = TRUE)
+fig
+```
+
+Creating a Bar Chart of the average body mass of penguin species
+```{r}
+penguin_stats <- penguins %>% 
+  group_by(species) %>% 
+  drop_na() %>%
+  summarise(
+    min_body_mass = min(body_mass_g),
+    avg_body_mass = mean(body_mass_g),
+    max_body_mass = max(body_mass_g))
+fig <- penguin_stats %>% plot_ly( x = ~species, y = ~avg_body_mass, color = ~species) %>%
+  add_bars() %>%
+  layout(title="Average Body Mass",
+         xaxis=list(title="Species"),
+         yaxis=list(title="Body Mass in Grams"),
+         barmode="stack")
+fig
+```
+
+We can see that Adelie and Chinstraps are about the same size, and Gentoo's are about 27% bigger. 
+```{r}
+fat_penguin <- function(weight, threshold = 4177){
+  if(weight > threshold){
+    print("Yeah...maybe")
+  } else {
+    print("Maybe not")
+  }
+}
+```
+
+Basic bar plot
+
+```{r}
+nums <- c(100, 200, 300)
+names <- c("A", "B", "C")
+bar_df <- data.frame(nums, names)
+```
+
+

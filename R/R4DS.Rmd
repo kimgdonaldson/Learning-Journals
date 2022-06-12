@@ -1,0 +1,112 @@
+---
+title: "R4DS"
+author: "Kim Donaldson"
+date: "1/9/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+library(plotly)
+vaers_file <- '/Users/kimdonaldson/Desktop/2021VAERSData/2021VAERSDATA.csv'
+vaers_data <- read.csv(vaers_file)
+vaers_deaths <- vaers_data %>%
+  filter( DIED == 'Y' )
+```
+
+
+## Data Visualization with ggolot and plotly
+
+### Creating a Scatter Plot to show how two variables are correlated.
+Examine the trend between cars engine size on highway mpg.
+In general, we put the explanatory variable on the X axis, 
+and the response variable on the Y axix.
+
+```{r}
+ggplot( data = mpg, mapping = aes(x = displ, y = hwy )) +
+  geom_point() +
+  geom_smooth()
+```
+
+This shows that the larger the engine size, the smaller the fuel effeciency. 
+We can also wrap ggplot objects in plotly to make charts look nicer. 
+```{r}
+g <- ggplot(data = mpg, mapping = aes( x = displ, y = hwy, color=class)) +
+  geom_point() 
+
+ggplotly(g) %>%
+  layout(
+    title="Engine Size vs. Fuel Efficiency",
+    xaxis = list(title="Engine Size"),
+    yaxis = list(title="Miles Per Gallon"),
+    plot_bgcolor = 'b0fafc'
+  )
+```
+Excercises
+1. What's gone wrong with this code? Why are the points not blue?
+```{r}
+ggplot(data = mpg) +
+  geom_point( 
+    mapping = aes( x = displ, y = hwy, color="blue" )
+    )
+```
+Solution: the color attribute should be inside the geom_point() function,
+not inside the mapping attribute:
+```{r}
+ggplot(data = mpg) +
+  geom_point( 
+    mapping = aes(x = displ, y = hwy), color="blue")
+```
+2. Which variables in mpg are categorical? Which are continuous?
+Categorical: manufacturer, model, trans, drv, fl, class
+Continuous: displ, cty, hwy
+
+3. What does the stroke aesthetic do? 
+Stroke adjusts the thickness of the border for shapes that can take an
+interior and exterior color. It only works on shapes 21-24
+
+## Coordinate Systems
+
+* coord_flip() switches the x and y axes
+```{r}
+ggplot(data = mpg, mapping=aes(x = class, y = hwy)) +
+  geom_boxplot() +
+  coord_flip()
+```
+
+## Statistical Transformations
+
+```{r}
+ggplot(data = diamonds) +
+  geom_bar( mapping = aes(x = cut, fill=cut) )
+```
+
+### Layered Grammar of Graphics
+
+#### GGPLOT DATA = DATA
+##### GEOM_FUNCTION
+##### Mapping = aes mappings
+##### stat = statistical transformation
+#### COORD FUNCTION
+#### FACET FUNCTION
+
+## Chapter 2: Data Transformation
+
+```{r}
+library(nycflights13)
+```
+
+### dplyr basics
+
+* filter() select obs by their values
+* arrange() reorder the rows by ascending or descending order
+* select() pick variables by name
+* mutate() create new variables based on the values of other variables
+* summarize() create a table of summary statistics
+* group_by() change the scope of each function to operate on the dataset by group
+

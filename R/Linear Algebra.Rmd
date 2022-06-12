@@ -1,0 +1,124 @@
+---
+title: "Linear Algebra"
+author: "Kim Donaldson"
+date: "1/6/2022"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Solving Linear Systems
+
+1. Get a variable by itself in one of the equations
+2. Substitue the variable from step 1 into the other equation
+3. Solve the equation in step 2 for the remaining variable. 
+
+## Row Echelon Form
+
+1. All pivot entries are equal to 1
+2. Any rows that consist of only 0's are at the bottom
+3. The pivots form a stair case pattern descending to the right
+
+## Reduced Row Echelon Form
+
+4. Every pivot is the only non zero entry in it's vector
+
+## Guass Jordan Elimination
+
+1. Pull out scalars from each row in the matrix
+2. If the first entry in the first row is 0, swap it for with another row that has a non zero entry in it's first position
+3. Multiply through the first row by a scalar to make the leading entry equal to 1
+4. Add scaled multiples of the first row to every other row until every entry in the first column, other than the leading 1 in the first row, is a 0
+5. Go back to Step 2 and repeat
+
+Implemntation 
+```{r}
+find_gcd <- function( x, y){
+  r <- x %% y
+  return(ifelse(r, find_gcd( y, r), y))
+}
+
+gcd <- function(num_vector = c()){
+  if (mode(num_vector) != "numeric"){
+    return("gcd error: vector must be numeric")
+  }
+  else if(min(num_vector) < 0){
+    return("gcd error: all values must be positive")
+  }
+  else {
+    num_vector <- sort(num_vector)
+    r <- NULL
+    prev_num <- NULL
+    c <- 0
+    
+    vec_len <- length(num_vector)
+    for(num in num_vector){
+      c <- c + 1
+      if(c == 1){
+        next
+      } else {
+        prev_num <- num_vector[c-1]
+        r <- append(r, find_gcd(prev_num, num))
+        #print(r)
+      }
+    }
+  }
+return(find_gcd(min(r), max(r)))
+}
+```
+```{r}
+
+k.make <- function(){
+  return( data.matrix( data.frame( c(1:6)*2, c(1:6)*3, c(1:6)*5 )))
+}
+
+# Overwrites default range() 
+range <- function(n){
+  return(c(1:n))
+}
+
+k.reduce <- function(X){
+  for(i in range(ncol(X))){
+    s <- gcd( X[,i])
+    if(s > 1){
+      X[,i] <- X[,i] / s
+    }
+  }
+  negative_row <- X[,1] * -1
+  
+  # Check if the first pivot entry is greater than 1, if so normalize the first vecor such that the first entry 
+  # becomes a 1
+  if(X[X[1,1]] > 1){
+    X[,1] <- X[,1] / X[X[1,1]]
+  } else {
+    # Otherwise it's already a 1 and we can move on
+    print("Debug")
+    print(X)
+    for(i in range(ncol(X))){
+      if(i == 1){ next }
+      else {
+        X[,i] <- X[,i] + negative_row
+      }
+    }
+  }
+  return(X)
+}
+
+k.display <- function(X){
+  for(i in range(ncol(X))){
+    print(X[,i])
+  }
+}
+
+
+```
+
+```{r}
+for(i in range(ncol(K))){
+  s <- gcd(K[,i])
+  K[,i] <- K[,i] / s
+}
+```
+
+
