@@ -1,0 +1,249 @@
+---
+title: "Learning Journal"
+subtitle: "Statistics and Probabilities with R"
+last-update: "6/12/2022"
+author: "Kim Donaldson"
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+## Statistics with R
+
+**Data Basics**
+
+* Types of variables
+* Relationship between variables
+* Questions about variables
+1. What type of variation occurs between variables
+2. What type of covariation occurs
+
+### Variables
+
+* **Numerical**
+  + **Continuos** 
+    - Infinite values within a given range
+  + **Discrete**
+    - Take on one of a specifit set of numerical values
+* **Categorical**
+   + **Regular Categorical**
+   + **Ordinal**
+     - Levels have an inherent ordering
+     
+## Vizualizing Numerical Data
+
+Generally plot the explanatory variable on the x axis and the response variable on the y axis.
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+library(plotly)
+```
+
+Graph of a scatter plot showing the explanatory variable on the X axis and the response variable on the Y axis
+
+```{r}
+ggplot(data = penguins, aes(x = body_mass_g, y = flipper_length_mm)) +
+  geom_point() +
+  geom_smooth()
+```
+```{r}
+ggplot(data = penguins, aes(x = body_mass_g)) +
+  geom_histogram()
+```
+
+### Estimates of distribution
+
+* mean()
+  + weighted.mean()
+  + trimmed mean mean(list, trim=.1)
+* median()
+* sd()
+* mad()
+* range()
+* IQR()
+
+
+## Normal Distribution
+
+Also referred to as a bell curve. 
+Unimodal and symtetric
+
+### 68 - 95 - 99.7% Rule
+
+When a numerical variable is normally distributed 68% of the values fall within 
+one standard deviation of the mean. 95% falls within 2 standard deviations, and 
+99.7% falls within 3 standard deviations
+
+The __rnorm()__ function will generate random numbers that fall within a normal distribution.
+
+```{r}
+nx <- rnorm(200)
+ndata <- data.frame(x = nx)
+ndata %>% plot_ly( x = ~x, type = 'histogram', color = ~x, colors ='dark green') 
+```
+
+### Standardized Z Scores
+
+Standardized (Z) score of an observation is the number of standard deviations
+it falls above or below the mean. 
+
+Z = ( observation - mean ) / standard deviation
+
+A Z score of mean = 0
+
+A Score of |2| is considered to be an unusual observation
+
+
+## Binomial distribution
+
+Describes the probability of havinv exactly k successes in n independent trials
+with probability of success p.
+
+__Bernoulli Random Variable__: An individual trial with only two possible outcomes
+
+__Binomial Distribution__ the probability of having exactly K successes in N 
+independent trials with probability of success p. 
+
+If p represents the probability of success, (1-p) represents the probability of 
+failure, n represents the number of independent trials, and k represents the number of 
+successes. 
+
+P(k successes in n trials) = (n choose k) * p^k * (1 - p)^(n - k) 
+
+__Binomial Conditions:__
+
+1. Trials must be independent
+2. The number of trials (n) must be fixed
+3. Each outcome must be classified success or failure
+4. The probaibily of success (p) must be the same for each trial 
+
+__# of scenarios * P(single scenario)__
+
+The __choose()__ function can be used to calculate the number of ways to choose K 
+successes in N trials. 
+
+(N choose K) is calculated as: N! / K! * (N - K)!
+This can be done in R with the dbinom() function
+
+How many scenarios yield three successes in five trials? 
+N = 5, K = 3
+```{r}
+choose( 5, 3 )
+```
+How many scenarios yield 2 successes in nine trials?
+N = 9, K = 2
+```{r}
+choose(9, 2)
+```
+
+If P represents success, then (1 - P) represents the probability of failure,
+N reprsents the number of trials, and K reprsents the number of successes.
+
+P(K successes in N trials) = N choose K *  P^k * (1-P)^(N-K)
+
+This can be calculated with the __dbinom(K, N, P)__ function
+
+According to a 2013 Gallop poll, worldide only 13% of empployees are engaged at work.
+Among a random sample of 10 employees, what is the probability that 8 of them are engaged at work?
+
+```{r}
+dbinom(8, size = 10, p = 0.13 )
+```
+
+The __pnorm()__ function calculates the percentile of where a number falls in
+the normal distribution given the mean and standard deviation of the distribution.
+
+Example: SAT scores distributed normally with mean 1500, and SD 300.
+If a test taker scores 1800 we can find the percentile with:
+```{r}
+pnorm(1800, 1500, 300)
+```
+
+The __qnorm(percentile, mean, sd)__ function caclulates the minimum number of a percentile
+given the percentile, mean, and standard deviation. 
+
+Example: An SAT test taker tells you that they scored in the top 10%.
+What is the minimum score they could have received?
+```{r}
+qnorm( 0.90, 1500, 300 )
+```
+
+
+Plotting a binomial distribution.
+
+```{r}
+num_trials <- 50
+p <- .5
+y <- c()
+x <- c()
+
+for(i in c(1:num_trials)){
+    p_val <- dbinom( i, num_trials, p = p ) 
+    y[i] <- p_val
+    x[i] <- i 
+}
+
+
+df <- data.frame(x,y)
+df %>% plot_ly(x = ~x, y = ~y, type='bar', color=~y, colors="Oranges") %>%
+  layout(
+    title="Normal Distribution"
+  )
+```
+
+## Set Theory
+
+A __Set__ is a collection of elements. 
+The __Cardinality__ of a set is the number of elements in a set.
+The __Intersect__ of a number of sets is the elements that the sets have in common.
+The __Union__ of a number of sets is the elements that are in either set. 
+
+## Probability
+
+The probability of an event is a number between 0 and 1 where 0 represents that 
+an outcome is not true, and where 1 represents that an outcome is true. 
+
+__Independence__: Two events are independent if knowing the outcome of one event does not change the outcome
+of the probability of the other. 
+Notation P(A|B) = P(A)
+
+__Joint Probability__ is the probability that two seperate independent events are both true.
+Notation: P( A,B ) = P(B) * P(A)
+Example: Two coins are tossed at the same time. What is the probability that both will land heads?
+P(H) = 0.5
+P( H,H ) = 0.5 * 0.5 = 0.25
+
+__Disjoint Events__: Events that are mutually exclusive.
+Notation: P( A or B ) = P(A) + P(B)
+
+__General Addition Rule__: P( A or B ) = P(A) + P(B) - P(A and B)
+Example: What is the probability that a randomly chosen card is a face card or a Heart?
+These events are not disjoint since they can both occur, so we have to subtract the union.
+P(Hearts or face card) = P(Hearts) + P(face card) - P(Hearts and face card)
+P(Hearts or face card) = 13/52 + 12/52 - 3/52
+
+__Permutation__: A set of elements that follows a linear order.
+Formula: N! / (N - K)! Where N is the number of unique objects and K is the number of unique attributes
+Example: There are 12 runners in a race. There are three unique attributes 1st place, 2nd place, 3rd place.
+How many permutations are possible?
+```{r}
+factorial(12) / factorial(12 - 3) 
+```
+
+__Combination__: A set of elements where order does not matter.
+Formula: N! / K! * (N -K)!
+This is the same as N choose K
+
+__Marginal Probability__: The probability that an individual event from one experiment occurs, regardless of the outcome from another experiment. 
+Notation: P(A1)
+
+__Conditional Probability__: When one event impacts the probability of another event.
+Notation: P(A|B) probability of A given event B
+
+__Product Rule__: P(A|B) = P(A, B) / P(B)
+
+## Bayes Rule
+
+P(A|B) = P(B|A) * P(A) / P(B)
+Where A is a hypothesis and B is observed data
