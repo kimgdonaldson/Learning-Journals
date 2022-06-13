@@ -94,7 +94,49 @@ fig <- penguin_stats %>% plot_ly( x = ~species, y = ~avg_body_mass, color = ~spe
 fig
 ```
 
-Adelie and Chinstraps are about the same size, and Gentoo's are about 27% bigger. 
+The default behavior of Plotly is to put the bars in alphabetical order. To rearrange the bars we have to specify which order we want them in by providing categoryorder, and categoryarray in the xaxis list:
+
+```{r}
+penguin_stats <- penguins %>% 
+  group_by(species) %>% 
+  drop_na() %>%
+  summarise(
+    min_body_mass = min(body_mass_g),
+    avg_body_mass = mean(body_mass_g),
+    max_body_mass = max(body_mass_g))
+fig <- penguin_stats %>% plot_ly( x = ~species, y = ~avg_body_mass, color = ~species) %>%
+  add_bars() %>%
+  layout(title="Average Body Mass",
+         xaxis=list(title="Species",
+             categoryorder="array",
+             categoryarray=c("Gentoo", "Chinstrap", "Adelie")),
+         yaxis=list(title="Body Mass in Grams"),
+         categoryorder="array",
+         categoryorder=c("Gentoo", "Chinstrap", "Adelie"),
+         barmode="stack")
+fig
+```
+
+
+Comparing variables with bar charts. add_trace() can be used to stack layers on charts
+
+```{r}
+penguin_stats <- penguins %>% 
+  group_by(species) %>% 
+  drop_na() %>%
+  summarise(
+    min_body_mass = min(body_mass_g),
+    avg_body_mass = mean(body_mass_g),
+    max_body_mass = max(body_mass_g))
+fig <- penguin_stats %>% plot_ly( x = ~species, y = ~avg_body_mass, type='bar', name="Average Body Mass") %>%
+  add_trace(y = ~min_body_mass, type='bar', name='Minimum Body Mass') %>%
+  layout(title="Comparing Average and Minimum values",
+         xaxis=list(title="Species"),
+         yaxis=list(title="Body Mass in Grams"),
+         barmode="stack")
+fig
+```
+
 
 3D Topographical Map
 
